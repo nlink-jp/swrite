@@ -101,6 +101,16 @@ cat output.log | swrite upload -f - -c "#ops" --filename "run.log"
 
 Create a default config file at `~/.config/swrite/config.json`.
 
+### `swrite cache`
+
+swrite caches the channel list for the active profile to avoid repeated API calls
+on every invocation. The cache is stored in `~/.config/swrite/cache/<profile>/` and
+expires after one hour.
+
+```bash
+swrite cache clear   # delete cached data for the active profile
+```
+
 ### `swrite profile`
 
 Manage named profiles.
@@ -157,6 +167,7 @@ Set `SWRITE_MODE=server` to skip the config file entirely. Required when running
 | `SWRITE_TOKEN` | yes | Slack Bot Token |
 | `SWRITE_CHANNEL` | no | Default channel |
 | `SWRITE_USERNAME` | no | Default display name |
+| `SWRITE_CACHE_DIR` | no | Directory to cache the channel list (recommended when swrite is invoked repeatedly) |
 
 **Example (Docker):**
 

@@ -53,7 +53,7 @@ func TestUpload_FileFlag(t *testing.T) {
 	srv, completeCalled := newUploadTestServer(t)
 
 	cfgPath := setupConfig(t, "xoxb-test", "#general")
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -103,7 +103,7 @@ func TestUpload_WithComment(t *testing.T) {
 	defer srv.Close()
 
 	cfgPath := setupConfig(t, "xoxb-test", "#general")
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()

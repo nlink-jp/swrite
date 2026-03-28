@@ -44,6 +44,22 @@ func DefaultConfigPath() (string, error) {
 	return filepath.Join(home, DefaultConfigDir, DefaultConfigFile), nil
 }
 
+// DefaultCacheDir returns the profile-specific cache directory.
+// Returns an empty string (no caching) if the home directory cannot be determined.
+func DefaultCacheDir(profileName string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, DefaultConfigDir, "cache", profileName)
+}
+
+// ServerCacheDir returns the cache directory for server mode.
+// It reads SWRITE_CACHE_DIR from the environment; returns empty string if unset.
+func ServerCacheDir() string {
+	return os.Getenv("SWRITE_CACHE_DIR")
+}
+
 // Load reads and parses the configuration from path.
 func Load(path string) (*Config, error) {
 	f, err := os.Open(path)

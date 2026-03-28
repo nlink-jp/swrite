@@ -100,6 +100,15 @@ cat output.log | swrite upload -f - -c "#ops" --filename "run.log"
 
 `~/.config/swrite/config.json` にデフォルト設定ファイルを作成します。
 
+### `swrite cache`
+
+swrite はチャンネル一覧を `~/.config/swrite/cache/<profile>/` に 1 時間キャッシュし、
+毎回の API 呼び出しを省略します。
+
+```bash
+swrite cache clear   # アクティブプロファイルのキャッシュを削除
+```
+
 ### `swrite profile`
 
 名前付きプロファイルを管理します。
@@ -156,6 +165,7 @@ swrite profile remove old-workspace
 | `SWRITE_TOKEN` | はい | Slack ボットトークン |
 | `SWRITE_CHANNEL` | いいえ | デフォルトチャンネル |
 | `SWRITE_USERNAME` | いいえ | デフォルト表示名 |
+| `SWRITE_CACHE_DIR` | いいえ | チャンネル一覧のキャッシュディレクトリ（繰り返し実行する場合に推奨） |
 
 **Docker での例:**
 

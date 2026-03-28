@@ -10,14 +10,22 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
 const (
-	defaultBaseURL = "https://slack.com/api"
-	httpTimeout    = 30 * time.Second
+	defaultBaseURL  = "https://slack.com/api"
+	httpTimeout     = 30 * time.Second
+	channelCacheTTL = time.Hour
 )
+
+// channelEntry is a minimal channel record used for name-to-ID resolution.
+type channelEntry struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
 
 // Client defines the write operations used by swrite.
 type Client interface {
@@ -51,6 +59,7 @@ type HTTPClient struct {
 	token      string
 	baseURL    string
 	httpClient *http.Client
+	cacheDir   string // optional; empty = no disk cache
 }
 
 // NewHTTPClient creates a new HTTPClient with the given bot token.
@@ -68,6 +77,12 @@ func NewHTTPClient(token string) *HTTPClient {
 func (c *HTTPClient) WithBaseURL(u string) *HTTPClient {
 	c.baseURL = strings.TrimRight(u, "/")
 	return c
+}
+
+// SetCacheDir enables disk caching of the channel list for name-to-ID resolution.
+// dir is profile-specific and is created on first use.
+func (c *HTTPClient) SetCacheDir(dir string) {
+	c.cacheDir = dir
 }
 
 // apiResponse is the common Slack envelope.
@@ -147,6 +162,28 @@ func (c *HTTPClient) resolveChannelID(ctx context.Context, nameOrID string) (str
 		return name, nil
 	}
 
+	channels, err := c.listChannels(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, ch := range channels {
+		if ch.Name == name || ch.ID == name {
+			return ch.ID, nil
+		}
+	}
+	return "", fmt.Errorf("channel %q not found", nameOrID)
+}
+
+// listChannels returns all channels, using a disk cache when available.
+func (c *HTTPClient) listChannels(ctx context.Context) ([]channelEntry, error) {
+	if c.cacheDir != "" {
+		cachePath := filepath.Join(c.cacheDir, "channels.json")
+		if entries, ok := loadCache[[]channelEntry](cachePath, channelCacheTTL); ok {
+			return entries, nil
+		}
+	}
+
+	var all []channelEntry
 	cursor := ""
 	for {
 		params := url.Values{
@@ -159,31 +196,28 @@ func (c *HTTPClient) resolveChannelID(ctx context.Context, nameOrID string) (str
 		}
 		b, err := c.apiGet(ctx, "conversations.list", params)
 		if err != nil {
-			return "", fmt.Errorf("list channels: %w", err)
+			return nil, fmt.Errorf("list channels: %w", err)
 		}
 		var resp struct {
-			Channels []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"channels"`
+			Channels         []channelEntry `json:"channels"`
 			ResponseMetadata struct {
 				NextCursor string `json:"next_cursor"`
 			} `json:"response_metadata"`
 		}
 		if err := json.Unmarshal(b, &resp); err != nil {
-			return "", fmt.Errorf("parse channels: %w", err)
+			return nil, fmt.Errorf("parse channels: %w", err)
 		}
-		for _, ch := range resp.Channels {
-			if ch.Name == name || ch.ID == name {
-				return ch.ID, nil
-			}
-		}
+		all = append(all, resp.Channels...)
 		cursor = resp.ResponseMetadata.NextCursor
 		if cursor == "" {
 			break
 		}
 	}
-	return "", fmt.Errorf("channel %q not found", nameOrID)
+
+	if c.cacheDir != "" {
+		saveCache(filepath.Join(c.cacheDir, "channels.json"), all)
+	}
+	return all, nil
 }
 
 // openDM opens a direct message channel with userID and returns the channel ID.

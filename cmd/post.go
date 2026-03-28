@@ -72,7 +72,7 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 		username = state.profile.Username
 	}
 
-	client := newClient(state.profile.Token)
+	client := newClient(state.profile.Token, state.cacheDir)
 
 	if stream {
 		return runStream(cmd.Context(), client, channel, userID, username, iconEmoji, tee, flagQuiet)

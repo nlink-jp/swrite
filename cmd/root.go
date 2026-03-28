@@ -12,9 +12,11 @@ import (
 
 // appState holds runtime configuration shared across subcommands.
 type appState struct {
-	serverMode bool
-	profile    config.Profile
-	configPath string
+	serverMode  bool
+	profile     config.Profile
+	configPath  string
+	profileName string
+	cacheDir    string
 }
 
 // state is populated by persistentPreRunE before any subcommand runs.
@@ -74,6 +76,7 @@ Examples:
 				return err
 			}
 			state.profile = p
+			state.cacheDir = config.ServerCacheDir()
 			return nil
 		}
 
@@ -94,11 +97,17 @@ Examples:
 			return err
 		}
 
+		profileName := flagProfile
+		if profileName == "" {
+			profileName = cfg.CurrentProfile
+		}
 		p, err := cfg.GetProfile(flagProfile)
 		if err != nil {
 			return err
 		}
 		state.profile = p
+		state.profileName = profileName
+		state.cacheDir = config.DefaultCacheDir(profileName)
 		return nil
 	}
 
@@ -106,6 +115,7 @@ Examples:
 	root.AddCommand(newUploadCmd(&flagQuiet))
 	root.AddCommand(newConfigCmd())
 	root.AddCommand(newProfileCmd())
+	root.AddCommand(newCacheCmd())
 
 	return root
 }

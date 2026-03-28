@@ -78,7 +78,7 @@ func runUpload(cmd *cobra.Command, flagQuiet *bool) error {
 		}
 	}
 
-	client := newClient(state.profile.Token)
+	client := newClient(state.profile.Token, state.cacheDir)
 	opts := slack.PostFileOptions{
 		Channel:        channel,
 		UserID:         userID,

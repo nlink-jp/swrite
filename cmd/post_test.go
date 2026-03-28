@@ -68,7 +68,7 @@ func TestPost_TextArgument(t *testing.T) {
 	defer srv.Close()
 
 	cfgPath := setupConfig(t, "xoxb-test", "#general")
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -96,7 +96,7 @@ func TestPost_FromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -125,7 +125,7 @@ func TestPost_BlocksArray(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -157,7 +157,7 @@ func TestPost_BlocksWrapper(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -222,7 +222,7 @@ func TestPost_ChannelOverride(t *testing.T) {
 
 	// Profile default is #general (C001), but we override with #ops (C002).
 	cfgPath := setupConfig(t, "xoxb-test", "#general")
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -247,7 +247,7 @@ func TestParseBlocks_Array(t *testing.T) {
 	defer srv.Close()
 
 	cfgPath := setupConfig(t, "xoxb-test", "#general")
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -302,7 +302,7 @@ func TestPost_ServerMode(t *testing.T) {
 	t.Setenv("SWRITE_CHANNEL", "C0123456789X")
 
 	// Provide a test client pointing at the test server.
-	cmd.SetNewClientFuncForTest(func(token string) slack.Client {
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
 		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
 	})
 	defer cmd.ResetClientFunc()
@@ -319,6 +319,62 @@ func TestPost_ServerMode(t *testing.T) {
 	}
 	if !strings.Contains(fmt.Sprintf("%v", gotBody["text"]), "server mode test") {
 		t.Errorf("text = %v, want to contain 'server mode test'", gotBody["text"])
+	}
+}
+
+// TestPost_ServerMode_CacheDir verifies that SWRITE_CACHE_DIR enables caching in server mode.
+func TestPost_ServerMode_CacheDir(t *testing.T) {
+	var listCalls int
+	mux := http.NewServeMux()
+	mux.HandleFunc("/conversations.list", func(w http.ResponseWriter, _ *http.Request) {
+		listCalls++
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":                true,
+			"channels":          []map[string]any{{"id": "C001", "name": "general"}},
+			"response_metadata": map[string]string{"next_cursor": ""},
+		})
+	})
+	mux.HandleFunc("/chat.postMessage", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	cacheDir := t.TempDir()
+	t.Setenv("SWRITE_MODE", "server")
+	t.Setenv("SWRITE_TOKEN", "xoxb-env")
+	t.Setenv("SWRITE_CHANNEL", "#general")
+	t.Setenv("SWRITE_CACHE_DIR", cacheDir)
+
+	cmd.SetNewClientFuncForTest(func(token, cd string) slack.Client {
+		c := slack.NewHTTPClient(token).WithBaseURL(srv.URL)
+		if cd != "" {
+			c.SetCacheDir(cd)
+		}
+		return c
+	})
+	defer cmd.ResetClientFunc()
+
+	// First invocation: populates cache.
+	root := cmd.RootCmd()
+	root.SetArgs([]string{"post", "first"})
+	root.SetErr(new(bytes.Buffer))
+	if err := root.Execute(); err != nil {
+		t.Fatalf("first Execute: %v", err)
+	}
+
+	// Second invocation: should hit cache, not call conversations.list again.
+	root2 := cmd.RootCmd()
+	root2.SetArgs([]string{"post", "second"})
+	root2.SetErr(new(bytes.Buffer))
+	if err := root2.Execute(); err != nil {
+		t.Fatalf("second Execute: %v", err)
+	}
+
+	if listCalls != 1 {
+		t.Errorf("conversations.list called %d times, want 1 (cache hit on second call)", listCalls)
 	}
 }
 
