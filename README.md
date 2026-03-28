@@ -13,6 +13,10 @@ Designed for bot workflows and shell pipelines. Works alongside [stail](https://
 - Server mode — zero config files via environment variables (Docker, Kubernetes)
 - Auto-join on `not_in_channel` — no manual bot invitation required
 
+## Setup
+
+New to swrite? See the **[Slack Setup Guide](docs/SLACK_SETUP.md)** for step-by-step instructions on creating a Slack App and obtaining a bot token.
+
 ## Installation
 
 Download the latest binary for your platform from [Releases](https://github.com/nlink-jp/swrite/releases),

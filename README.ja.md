@@ -13,6 +13,10 @@
 - サーバーモード — 環境変数だけで設定ファイル不要（Docker、Kubernetes 向け）
 - `not_in_channel` エラー時に自動チャンネル参加してリトライ
 
+## セットアップ
+
+初めて使う方は **[Slack セットアップガイド](docs/SLACK_SETUP.ja.md)** を参照してください。Slack アプリの作成とボットトークンの取得手順を説明しています。
+
 ## インストール
 
 [Releases](https://github.com/nlink-jp/swrite/releases) から最新バイナリをダウンロード、またはソースからビルド：
