@@ -39,7 +39,7 @@ Examples:
 	cmd.Flags().BoolP("tee", "t", false, "Echo stdin to stdout before posting (stream and stdin modes)")
 	cmd.Flags().StringP("username", "u", "", "Override display name for this post")
 	cmd.Flags().StringP("icon-emoji", "i", "", "Override icon emoji for this post (e.g. :robot_face:)")
-	cmd.Flags().String("format", "text", "Message format: text or blocks")
+	cmd.Flags().String("format", "text", "Message format: text, blocks, or payload")
 
 	return cmd
 }
@@ -61,11 +61,11 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 	if channel != "" && userID != "" {
 		return fmt.Errorf("--channel and --user are mutually exclusive")
 	}
-	if format != "text" && format != "blocks" {
-		return fmt.Errorf("--format must be \"text\" or \"blocks\", got %q", format)
+	if format != "text" && format != "blocks" && format != "payload" {
+		return fmt.Errorf("--format must be \"text\", \"blocks\", or \"payload\", got %q", format)
 	}
-	if stream && format == "blocks" {
-		return fmt.Errorf("--stream cannot be used with --format blocks")
+	if stream && format != "text" {
+		return fmt.Errorf("--stream can only be used with --format text")
 	}
 
 	if username == "" {
@@ -111,13 +111,24 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 		IconEmoji:      iconEmoji,
 	}
 
-	if format == "blocks" {
+	switch format {
+	case "blocks":
 		blocks, err := parseBlocks(content)
 		if err != nil {
 			return err
 		}
 		opts.Blocks = blocks
-	} else {
+	case "payload":
+		p, err := parsePayload(content)
+		if err != nil {
+			return err
+		}
+		opts.Blocks = p.Blocks
+		opts.Attachments = p.Attachments
+		if p.Text != "" {
+			opts.Text = p.Text
+		}
+	default:
 		opts.Text = content
 	}
 
@@ -149,6 +160,26 @@ func parseBlocks(content string) (json.RawMessage, error) {
 		return nil, fmt.Errorf("blocks JSON must be an array or an object with a \"blocks\" key")
 	}
 	return blocks, nil
+}
+
+// parsedPayload holds the fields extracted from a full message payload.
+type parsedPayload struct {
+	Text        string          `json:"text"`
+	Blocks      json.RawMessage `json:"blocks"`
+	Attachments json.RawMessage `json:"attachments"`
+}
+
+// parsePayload parses a full Slack message payload JSON.
+// It extracts text, blocks, and attachments fields.
+func parsePayload(content string) (parsedPayload, error) {
+	var p parsedPayload
+	if err := json.Unmarshal([]byte(content), &p); err != nil {
+		return p, fmt.Errorf("parse payload JSON: %w", err)
+	}
+	if len(p.Blocks) == 0 && len(p.Attachments) == 0 && p.Text == "" {
+		return p, fmt.Errorf("payload must contain at least one of: text, blocks, attachments")
+	}
+	return p, nil
 }
 
 // runStream reads stdin line by line, batching messages every 3 seconds.

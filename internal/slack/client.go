@@ -42,6 +42,7 @@ type PostMessageOptions struct {
 	Username       string
 	IconEmoji      string
 	Blocks         json.RawMessage
+	Attachments    json.RawMessage
 }
 
 // PostFileOptions holds parameters for the external file upload flow.
@@ -255,18 +256,20 @@ func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) e
 	}
 
 	type payload struct {
-		Channel   string          `json:"channel"`
-		Text      string          `json:"text,omitempty"`
-		Username  string          `json:"username,omitempty"`
-		IconEmoji string          `json:"icon_emoji,omitempty"`
-		Blocks    json.RawMessage `json:"blocks,omitempty"`
+		Channel     string          `json:"channel"`
+		Text        string          `json:"text,omitempty"`
+		Username    string          `json:"username,omitempty"`
+		IconEmoji   string          `json:"icon_emoji,omitempty"`
+		Blocks      json.RawMessage `json:"blocks,omitempty"`
+		Attachments json.RawMessage `json:"attachments,omitempty"`
 	}
 	msg := payload{
-		Channel:   channelID,
-		Text:      opts.Text,
-		Username:  opts.Username,
-		IconEmoji: opts.IconEmoji,
-		Blocks:    opts.Blocks,
+		Channel:     channelID,
+		Text:        opts.Text,
+		Username:    opts.Username,
+		IconEmoji:   opts.IconEmoji,
+		Blocks:      opts.Blocks,
+		Attachments: opts.Attachments,
 	}
 
 	_, err = c.apiPost(ctx, "chat.postMessage", msg)
