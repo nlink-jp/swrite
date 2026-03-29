@@ -56,7 +56,8 @@ Flags:
   -t, --tee                Echo stdin to stdout before posting
   -u, --username string    Override display name for this post
   -i, --icon-emoji string  Override icon emoji (e.g. :robot_face:)
-      --format string      Message format: text or blocks (default "text")
+      --format string      Message format: text, blocks, or payload (default "text")
+      --no-unfurl          Disable link previews (unfurl_links and unfurl_media)
 ```
 
 **Examples:**

@@ -55,7 +55,8 @@ swrite post [メッセージ] [フラグ]
   -t, --tee                投稿前に stdin を stdout にエコー
   -u, --username string    この投稿の表示名を上書き
   -i, --icon-emoji string  アイコン絵文字を上書き（例: :robot_face:）
-      --format string      メッセージ形式: text または blocks（デフォルト: text）
+      --format string      メッセージ形式: text, blocks, または payload（デフォルト: text）
+      --no-unfurl          リンクプレビューを無効化（unfurl_links と unfurl_media）
 ```
 
 **使用例:**

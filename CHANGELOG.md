@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-29
+
+### Added
+
+- **`--format payload`** — New message format that accepts a full Slack message JSON with `text`, `blocks`, and/or `attachments` fields. Enables colored sidebar panels via Slack attachments.
+- **`--no-unfurl`** — Disable Slack link previews (`unfurl_links=false`, `unfurl_media=false`). Useful when posting messages with many URLs.
+- **`unfurl_links` / `unfurl_media` in payload format** — When using `--format payload`, these fields are read from the JSON input and passed through to the Slack API.
+
 ## [0.2.0] - 2026-03-29
 
 ### Added
