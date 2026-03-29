@@ -43,6 +43,8 @@ type PostMessageOptions struct {
 	IconEmoji      string
 	Blocks         json.RawMessage
 	Attachments    json.RawMessage
+	UnfurlLinks    *bool // nil = Slack default (true); set to disable link previews
+	UnfurlMedia    *bool
 }
 
 // PostFileOptions holds parameters for the external file upload flow.
@@ -262,6 +264,8 @@ func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) e
 		IconEmoji   string          `json:"icon_emoji,omitempty"`
 		Blocks      json.RawMessage `json:"blocks,omitempty"`
 		Attachments json.RawMessage `json:"attachments,omitempty"`
+		UnfurlLinks *bool           `json:"unfurl_links,omitempty"`
+		UnfurlMedia *bool           `json:"unfurl_media,omitempty"`
 	}
 	msg := payload{
 		Channel:     channelID,
@@ -270,6 +274,8 @@ func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) e
 		IconEmoji:   opts.IconEmoji,
 		Blocks:      opts.Blocks,
 		Attachments: opts.Attachments,
+		UnfurlLinks: opts.UnfurlLinks,
+		UnfurlMedia: opts.UnfurlMedia,
 	}
 
 	_, err = c.apiPost(ctx, "chat.postMessage", msg)

@@ -378,3 +378,84 @@ func TestPost_ServerMode_CacheDir(t *testing.T) {
 	}
 }
 
+
+func TestPost_PayloadFormat(t *testing.T) {
+	var gotBody map[string]any
+	mux := http.NewServeMux()
+	mux.HandleFunc("/chat.postMessage", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	cfgPath := setupConfig(t, "xoxb-test", "C0123456789X")
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
+		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
+	})
+	defer cmd.ResetClientFunc()
+
+	payloadJSON := `{"text":"fallback","attachments":[{"color":"#e01e5a","blocks":[{"type":"section","text":{"type":"mrkdwn","text":"hello"}}]}]}`
+	msgFile := filepath.Join(t.TempDir(), "payload.json")
+	if err := os.WriteFile(msgFile, []byte(payloadJSON), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	root := cmd.RootCmd()
+	root.SetArgs([]string{"--config", cfgPath, "post", "--format", "payload", "--from-file", msgFile})
+	root.SetErr(new(bytes.Buffer))
+
+	if err := root.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotBody["text"] != "fallback" {
+		t.Errorf("text = %v, want 'fallback'", gotBody["text"])
+	}
+	attachments, ok := gotBody["attachments"]
+	if !ok {
+		t.Fatal("expected attachments in payload")
+	}
+	arr, ok := attachments.([]any)
+	if !ok || len(arr) == 0 {
+		t.Errorf("attachments should be a non-empty array, got %v", attachments)
+	}
+}
+
+func TestPost_NoUnfurl(t *testing.T) {
+	var gotBody map[string]any
+	srv := newPostTestServer(t, &gotBody)
+	defer srv.Close()
+
+	cfgPath := setupConfig(t, "xoxb-test", "#general")
+	cmd.SetNewClientFuncForTest(func(token, _ string) slack.Client {
+		return slack.NewHTTPClient(token).WithBaseURL(srv.URL)
+	})
+	defer cmd.ResetClientFunc()
+
+	root := cmd.RootCmd()
+	root.SetArgs([]string{"--config", cfgPath, "post", "--no-unfurl", "check https://example.com"})
+	root.SetErr(new(bytes.Buffer))
+
+	if err := root.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotBody["unfurl_links"] != false {
+		t.Errorf("unfurl_links = %v, want false", gotBody["unfurl_links"])
+	}
+	if gotBody["unfurl_media"] != false {
+		t.Errorf("unfurl_media = %v, want false", gotBody["unfurl_media"])
+	}
+}
+
+func TestPost_PayloadFormatInvalid(t *testing.T) {
+	cfgPath := setupConfig(t, "xoxb-test", "#general")
+
+	root := cmd.RootCmd()
+	root.SetArgs([]string{"--config", cfgPath, "post", "--format", "payload", "{}"})
+	root.SetErr(new(bytes.Buffer))
+
+	if err := root.Execute(); err == nil {
+		t.Error("expected error for empty payload")
+	}
+}

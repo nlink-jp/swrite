@@ -40,6 +40,7 @@ Examples:
 	cmd.Flags().StringP("username", "u", "", "Override display name for this post")
 	cmd.Flags().StringP("icon-emoji", "i", "", "Override icon emoji for this post (e.g. :robot_face:)")
 	cmd.Flags().String("format", "text", "Message format: text, blocks, or payload")
+	cmd.Flags().Bool("no-unfurl", false, "Disable link previews (unfurl_links=false, unfurl_media=false)")
 
 	return cmd
 }
@@ -103,12 +104,19 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 		}
 	}
 
+	noUnfurl, _ := cmd.Flags().GetBool("no-unfurl")
+
 	opts := slack.PostMessageOptions{
 		Channel:        channel,
 		UserID:         userID,
 		DefaultChannel: state.profile.Channel,
 		Username:       username,
 		IconEmoji:      iconEmoji,
+	}
+	if noUnfurl {
+		f := false
+		opts.UnfurlLinks = &f
+		opts.UnfurlMedia = &f
 	}
 
 	switch format {
@@ -127,6 +135,12 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 		opts.Attachments = p.Attachments
 		if p.Text != "" {
 			opts.Text = p.Text
+		}
+		if p.UnfurlLinks != nil {
+			opts.UnfurlLinks = p.UnfurlLinks
+		}
+		if p.UnfurlMedia != nil {
+			opts.UnfurlMedia = p.UnfurlMedia
 		}
 	default:
 		opts.Text = content
@@ -167,6 +181,8 @@ type parsedPayload struct {
 	Text        string          `json:"text"`
 	Blocks      json.RawMessage `json:"blocks"`
 	Attachments json.RawMessage `json:"attachments"`
+	UnfurlLinks *bool           `json:"unfurl_links"`
+	UnfurlMedia *bool           `json:"unfurl_media"`
 }
 
 // parsePayload parses a full Slack message payload JSON.
