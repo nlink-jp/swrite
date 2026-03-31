@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.1] - 2026-03-31
+## [0.3.2] - 2026-03-31
+
+### Added
+- `upload --thread` flag for posting files as thread replies
+- `PostFileOptions.ThreadTS` passes `thread_ts` to `files.completeUploadExternal`
+
 
 ### Added
 - `post` now outputs message timestamp (ts) to stdout for pipeline use

@@ -32,6 +32,7 @@ Examples:
 	cmd.Flags().StringP("file", "f", "", `File path to upload, or "-" to read from stdin`)
 	cmd.Flags().StringP("comment", "m", "", "Initial comment to post with the file")
 	cmd.Flags().StringP("filename", "n", "", "Filename shown in Slack (default: basename of --file)")
+	cmd.Flags().String("thread", "", "Post file as a thread reply (message timestamp)")
 	_ = cmd.MarkFlagRequired("file")
 
 	return cmd
@@ -47,6 +48,7 @@ func runUpload(cmd *cobra.Command, flagQuiet *bool) error {
 	filePath, _ := cmd.Flags().GetString("file")
 	comment, _ := cmd.Flags().GetString("comment")
 	filename, _ := cmd.Flags().GetString("filename")
+	threadTS, _ := cmd.Flags().GetString("thread")
 
 	if channel != "" && userID != "" {
 		return fmt.Errorf("--channel and --user are mutually exclusive")
@@ -86,6 +88,7 @@ func runUpload(cmd *cobra.Command, flagQuiet *bool) error {
 		FilePath:       filePath,
 		Filename:       filename,
 		Comment:        comment,
+		ThreadTS:       threadTS,
 	}
 	if err := client.PostFile(cmd.Context(), opts); err != nil {
 		return fmt.Errorf("upload file: %w", err)

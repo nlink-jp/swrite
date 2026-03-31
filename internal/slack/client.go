@@ -61,6 +61,7 @@ type PostFileOptions struct {
 	FilePath       string
 	Filename       string
 	Comment        string
+	ThreadTS       string // post file as a thread reply
 }
 
 // HTTPClient is the production implementation of Client.
@@ -364,11 +365,13 @@ func (c *HTTPClient) PostFile(ctx context.Context, opts PostFileOptions) error {
 		Files          []fileEntry `json:"files"`
 		ChannelID      string      `json:"channel_id"`
 		InitialComment string      `json:"initial_comment,omitempty"`
+		ThreadTS       string      `json:"thread_ts,omitempty"`
 	}
 	cp := completePayload{
 		Files:          []fileEntry{{ID: urlResp.FileID}},
 		ChannelID:      channelID,
 		InitialComment: opts.Comment,
+		ThreadTS:       opts.ThreadTS,
 	}
 	_, err = c.apiPost(ctx, "files.completeUploadExternal", cp)
 	if err != nil && strings.Contains(err.Error(), "not_in_channel") && opts.UserID == "" {
