@@ -89,6 +89,7 @@ Flags:
   -f, --file string       File path to upload, or "-" for stdin (required)
   -m, --comment string    Initial comment to post with the file
   -n, --filename string   Filename shown in Slack (default: basename of --file)
+      --thread string     Post file as a thread reply (message timestamp)
 ```
 
 **Examples:**
@@ -96,6 +97,10 @@ Flags:
 ```bash
 swrite upload -f report.csv -c "#data" --comment "Weekly report"
 cat output.log | swrite upload -f - -c "#ops" --filename "run.log"
+
+# Upload as a thread reply
+TS=$(echo "alert" | swrite post -c "#ops" -q)
+swrite upload -f details.txt -c "#ops" --thread "$TS"
 ```
 
 ### `swrite config init`
