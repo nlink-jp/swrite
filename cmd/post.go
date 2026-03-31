@@ -146,12 +146,15 @@ func runPost(cmd *cobra.Command, args []string, flagQuiet *bool) error {
 		opts.Text = content
 	}
 
-	if err := client.PostMessage(cmd.Context(), opts); err != nil {
+	result, err := client.PostMessage(cmd.Context(), opts)
+	if err != nil {
 		return fmt.Errorf("post message: %w", err)
 	}
 	if !*flagQuiet {
-		fmt.Fprintln(os.Stderr, "Message posted.")
+		fmt.Fprintf(os.Stderr, "Message posted (ts: %s)\n", result.TS)
 	}
+	// Output ts to stdout for pipeline use (e.g. thread replies, file attachments).
+	fmt.Fprintln(cmd.OutOrStdout(), result.TS)
 	return nil
 }
 
@@ -234,7 +237,7 @@ func runStream(ctx context.Context, client slack.Client, channel, userID, userna
 			Username:       username,
 			IconEmoji:      iconEmoji,
 		}
-		if err := client.PostMessage(ctx, opts); err != nil {
+		if _, err := client.PostMessage(ctx, opts); err != nil {
 			fmt.Fprintf(os.Stderr, "post error: %v\n", err)
 		} else if !*flagQuiet {
 			fmt.Fprintf(os.Stderr, "Posted %d line(s).\n", len(buffer))

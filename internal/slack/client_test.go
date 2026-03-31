@@ -55,7 +55,7 @@ func TestHTTPClient_PostMessage_ByChannelName(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		Channel: "#general",
 		Text:    "hello world",
 	})
@@ -76,7 +76,7 @@ func TestHTTPClient_PostMessage_DefaultChannel(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		DefaultChannel: "general",
 		Text:           "from default",
 	})
@@ -105,7 +105,7 @@ func TestHTTPClient_PostMessage_ChannelID(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		Channel: "C0123456789",
 		Text:    "direct id",
 	})
@@ -119,7 +119,7 @@ func TestHTTPClient_PostMessage_ChannelID(t *testing.T) {
 
 func TestHTTPClient_PostMessage_NoDestination(t *testing.T) {
 	client := slack.NewHTTPClient("xoxb-test")
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		Text: "no dest",
 	})
 	if err == nil {
@@ -150,7 +150,7 @@ func TestHTTPClient_PostMessage_DMViaUser(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		UserID: "U001",
 		Text:   "dm message",
 	})
@@ -193,7 +193,7 @@ func TestHTTPClient_PostMessage_NotInChannel_AutoJoin(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		Channel: "#general",
 		Text:    "auto join test",
 	})
@@ -273,7 +273,7 @@ func TestHTTPClient_PostMessage_APIError(t *testing.T) {
 	defer srv.Close()
 
 	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
-	err := client.PostMessage(context.Background(), slack.PostMessageOptions{
+	_, err := client.PostMessage(context.Background(), slack.PostMessageOptions{
 		Channel: "C0000000000",
 		Text:    "test",
 	})

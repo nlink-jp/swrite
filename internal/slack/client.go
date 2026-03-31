@@ -27,9 +27,15 @@ type channelEntry struct {
 	Name string `json:"name"`
 }
 
+// PostResult holds the result of a successful chat.postMessage call.
+type PostResult struct {
+	TS      string `json:"ts"`
+	Channel string `json:"channel"`
+}
+
 // Client defines the write operations used by swrite.
 type Client interface {
-	PostMessage(ctx context.Context, opts PostMessageOptions) error
+	PostMessage(ctx context.Context, opts PostMessageOptions) (PostResult, error)
 	PostFile(ctx context.Context, opts PostFileOptions) error
 }
 
@@ -251,10 +257,10 @@ func (c *HTTPClient) joinChannel(ctx context.Context, channelID string) error {
 
 // PostMessage sends a text or Block Kit message to a channel or DM.
 // If the bot is not in the channel, it joins automatically and retries once.
-func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) error {
+func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) (PostResult, error) {
 	channelID, err := c.resolveTarget(ctx, opts.Channel, opts.UserID, opts.DefaultChannel)
 	if err != nil {
-		return err
+		return PostResult{}, err
 	}
 
 	type payload struct {
@@ -278,14 +284,25 @@ func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) e
 		UnfurlMedia: opts.UnfurlMedia,
 	}
 
-	_, err = c.apiPost(ctx, "chat.postMessage", msg)
+	body, err := c.apiPost(ctx, "chat.postMessage", msg)
 	if err != nil && strings.Contains(err.Error(), "not_in_channel") && opts.UserID == "" {
 		if jerr := c.joinChannel(ctx, channelID); jerr != nil {
-			return fmt.Errorf("join channel: %w", jerr)
+			return PostResult{}, fmt.Errorf("join channel: %w", jerr)
 		}
-		_, err = c.apiPost(ctx, "chat.postMessage", msg)
+		body, err = c.apiPost(ctx, "chat.postMessage", msg)
 	}
-	return err
+	if err != nil {
+		return PostResult{}, err
+	}
+
+	var resp struct {
+		TS      string `json:"ts"`
+		Channel string `json:"channel"`
+	}
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return PostResult{TS: "", Channel: channelID}, nil
+	}
+	return PostResult{TS: resp.TS, Channel: resp.Channel}, nil
 }
 
 // PostFile uploads a file using the Slack external upload API (3 steps).

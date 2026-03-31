@@ -42,7 +42,7 @@ func TestListChannels_CacheHit(t *testing.T) {
 	ctx := context.Background()
 
 	// First call: should hit the network to build the cache.
-	if err := c.PostMessage(ctx, slack.PostMessageOptions{
+	if _, err := c.PostMessage(ctx, slack.PostMessageOptions{
 		Channel: "#general",
 	}); err != nil {
 		t.Fatalf("first PostMessage: %v", err)
@@ -52,7 +52,7 @@ func TestListChannels_CacheHit(t *testing.T) {
 	}
 
 	// Second call: cache should be warm — no additional list call.
-	if err := c.PostMessage(ctx, slack.PostMessageOptions{
+	if _, err := c.PostMessage(ctx, slack.PostMessageOptions{
 		Channel: "#general",
 	}); err != nil {
 		t.Fatalf("second PostMessage: %v", err)
@@ -94,7 +94,7 @@ func TestListChannels_NoCacheDir(t *testing.T) {
 
 	ctx := context.Background()
 	for i := range 3 {
-		if err := c.PostMessage(ctx, slack.PostMessageOptions{Channel: "#general"}); err != nil {
+		if _, err := c.PostMessage(ctx, slack.PostMessageOptions{Channel: "#general"}); err != nil {
 			t.Fatalf("PostMessage[%d]: %v", i, err)
 		}
 	}
