@@ -301,6 +301,9 @@ func (c *HTTPClient) PostMessage(ctx context.Context, opts PostMessageOptions) (
 		Channel string `json:"channel"`
 	}
 	if err := json.Unmarshal(body, &resp); err != nil {
+		// Log the error but don't fail — the message was posted successfully.
+		// ts may not be available but the post operation itself succeeded.
+		fmt.Fprintf(os.Stderr, "warning: could not parse message ts: %v\n", err)
 		return PostResult{TS: "", Channel: channelID}, nil
 	}
 	return PostResult{TS: resp.TS, Channel: resp.Channel}, nil

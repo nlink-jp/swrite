@@ -5,13 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - 2026-03-31
+## [0.3.3] - 2026-03-31
+
+### Fixed
+- PostResult JSON parse failure now logs warning instead of silently swallowing error
+- Test mock servers return ts/channel in responses for realistic testing
+
+### Added
+- Tests for ts stdout output after post
+- Tests for upload --thread (thread_ts in API payload)
+
 ## [0.3.2] - 2026-03-31
 
 ### Added
 - `upload --thread` flag for posting files as thread replies
 - `PostFileOptions.ThreadTS` passes `thread_ts` to `files.completeUploadExternal`
 
+## [0.3.1] - 2026-03-31
 
 ### Added
 - `post` now outputs message timestamp (ts) to stdout for pipeline use

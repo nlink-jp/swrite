@@ -43,7 +43,7 @@ func newPostServer(t *testing.T, gotChannel, gotText *string) *httptest.Server {
 			}
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "ts": "1234567890.123456", "channel": "C001"})
 	})
 
 	return httptest.NewServer(mux)
@@ -260,6 +260,63 @@ func TestHTTPClient_PostFile(t *testing.T) {
 	}
 	if !completeCalled {
 		t.Error("files.completeUploadExternal was not called")
+	}
+}
+
+func TestHTTPClient_PostFile_ThreadTS(t *testing.T) {
+	dir := t.TempDir()
+	fpath := filepath.Join(dir, "test.txt")
+	if err := os.WriteFile(fpath, []byte("thread file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotThreadTS string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/conversations.list", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":                true,
+			"channels":          []map[string]any{{"id": "C001", "name": "general"}},
+			"response_metadata": map[string]string{"next_cursor": ""},
+		})
+	})
+
+	srv := httptest.NewServer(mux)
+
+	mux.HandleFunc("/files.getUploadURLExternal", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"ok":         true,
+			"upload_url": srv.URL + "/upload",
+			"file_id":    "F002",
+		})
+	})
+	mux.HandleFunc("/upload", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/files.completeUploadExternal", func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if ts, ok := body["thread_ts"].(string); ok {
+			gotThreadTS = ts
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+
+	client := slack.NewHTTPClient("xoxb-test").WithBaseURL(srv.URL)
+	err := client.PostFile(context.Background(), slack.PostFileOptions{
+		Channel:  "#general",
+		FilePath: fpath,
+		Filename: "test.txt",
+		ThreadTS: "1111111111.111111",
+	})
+	srv.Close()
+	if err != nil {
+		t.Fatalf("PostFile with ThreadTS: %v", err)
+	}
+	if gotThreadTS != "1111111111.111111" {
+		t.Errorf("thread_ts = %q, want %q", gotThreadTS, "1111111111.111111")
 	}
 }
 

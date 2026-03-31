@@ -57,7 +57,7 @@ func newPostTestServer(t *testing.T, gotBody *map[string]any) *httptest.Server {
 			_ = json.NewDecoder(r.Body).Decode(gotBody)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "ts": "1234567890.123456", "channel": "C001"})
 	})
 	return httptest.NewServer(mux)
 }
@@ -74,6 +74,8 @@ func TestPost_TextArgument(t *testing.T) {
 	defer cmd.ResetClientFunc()
 
 	root := cmd.RootCmd()
+	var stdout bytes.Buffer
+	root.SetOut(&stdout)
 	root.SetArgs([]string{"--config", cfgPath, "post", "hello test"})
 	root.SetErr(new(bytes.Buffer))
 
@@ -82,6 +84,9 @@ func TestPost_TextArgument(t *testing.T) {
 	}
 	if gotBody["text"] != "hello test" {
 		t.Errorf("text = %v, want %q", gotBody["text"], "hello test")
+	}
+	if !strings.Contains(stdout.String(), "1234567890.123456") {
+		t.Errorf("stdout = %q, want to contain ts value '1234567890.123456'", stdout.String())
 	}
 }
 
