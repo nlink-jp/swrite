@@ -161,4 +161,4 @@ export SWRITE_CHANNEL="#alerts"
 echo "container started" | swrite post
 ```
 
-See the [README](../README.md#server-mode) for details.
+See the [README](../../README.md#server-mode) for details.

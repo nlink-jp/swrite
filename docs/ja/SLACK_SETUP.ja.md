@@ -160,4 +160,4 @@ export SWRITE_CHANNEL="#alerts"
 echo "コンテナ起動" | swrite post
 ```
 
-詳細は [README](../README.md#server-mode) を参照してください。
+詳細は [README](../../README.ja.md#サーバーモード) を参照してください。

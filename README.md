@@ -15,7 +15,7 @@ Designed for bot workflows and shell pipelines. Works alongside [stail](https://
 
 ## Setup
 
-New to swrite? See the **[Slack Setup Guide](docs/SLACK_SETUP.md)** for step-by-step instructions on creating a Slack App and obtaining a bot token.
+New to swrite? See the **[Slack Setup Guide](docs/en/SLACK_SETUP.md)** for step-by-step instructions on creating a Slack App and obtaining a bot token.
 
 ## Installation
 
