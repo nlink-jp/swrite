@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`--version` flag and `version` subcommand.** Both print
+  `swrite version <version>` and read no config file. swrite answered neither:
+  the build injected its version into a variable nothing read, so the Homebrew
+  formula's `brew test` (`swrite --version`) failed, and `make verify-release`
+  would have refused the next release.
+
 ### Fixed
 
 - **`make verify-release` now fails closed.** Its last block chained unzip, the

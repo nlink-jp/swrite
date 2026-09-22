@@ -22,9 +22,9 @@ type appState struct {
 // state is populated by persistentPreRunE before any subcommand runs.
 var state appState
 
-// newRootCmd builds and returns a fresh command tree.
+// newRootCmd builds and returns a fresh command tree that reports version.
 // A fresh tree ensures flag values do not persist between Execute calls (important for tests).
-func newRootCmd() *cobra.Command {
+func newRootCmd(version string) *cobra.Command {
 	var flagConfig, flagProfile string
 	var flagQuiet bool
 
@@ -39,6 +39,7 @@ Examples:
   echo "deploy complete" | swrite post -c "#ops"
   swrite post --format blocks < payload.json
   swrite upload -f report.csv -c "#data" --comment "Weekly report"`,
+		Version:      version,
 		SilenceUsage: true,
 	}
 
@@ -116,28 +117,30 @@ Examples:
 	root.AddCommand(newConfigCmd())
 	root.AddCommand(newProfileCmd())
 	root.AddCommand(newCacheCmd())
+	root.AddCommand(newVersionCmd())
 
 	return root
 }
 
 // RootCmd returns a fresh root command (used in tests).
 func RootCmd() *cobra.Command {
-	return newRootCmd()
+	return newRootCmd("dev")
 }
 
-// Execute runs the CLI. Call this from main().
-func Execute() {
-	if err := newRootCmd().Execute(); err != nil {
+// Execute runs the CLI with the build's version string. Call this from main().
+func Execute(version string) {
+	if err := newRootCmd(version).Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-// skipConfigLoad returns true for commands that manage the config file directly.
+// skipConfigLoad returns true for commands that manage the config file directly,
+// and for version, which must answer without one.
 func skipConfigLoad(cmd *cobra.Command) bool {
 	c := cmd
 	for c != nil {
 		name := c.Name()
-		if name == "config" || name == "profile" {
+		if name == "config" || name == "profile" || name == "version" {
 			return true
 		}
 		c = c.Parent()
