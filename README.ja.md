@@ -126,7 +126,7 @@ swrite profile remove old-workspace
 ### `swrite --version` / `swrite version`
 
 ```bash
-swrite --version   # swrite version v0.5.0
+swrite --version   # swrite version v0.5.1
 swrite version     # 同じ行を出力
 ```
 
